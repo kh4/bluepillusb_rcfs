@@ -555,10 +555,31 @@ void usbInputCallback(uint8_t b)
 
   if ((b == '\r') || (b == '\n')) {
     inputline[inputlen] = 0; // ensure NUL
-    if (inputlen) usbLineIn(&inputline);
+    if (inputlen) usbLineIn((char*)&inputline);
     inputlen = 0;
   } else if (inputlen < (INPUTLEN - 1)) {
     inputline[inputlen++] = b;
+  }
+}
+
+uint8_t uartbyte;
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+  if (huart == &huart1) {
+    static char inputline[INPUTLEN];
+    static int  inputlen = 0;
+    char b  = (char)uartbyte;
+    if ((b == '\r') || (b == '\n')) {
+      inputline[inputlen] = 0; // ensure NUL
+      if (inputlen) usbLineIn((char*)&inputline);
+      inputlen = 0;
+    } else if (inputlen < (INPUTLEN - 1)) {
+      inputline[inputlen++] = b;
+    }
+
+    HAL_UART_Receive_IT(huart, &uartbyte, 1);
+
   }
 }
 
@@ -610,6 +631,8 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 	htim->Instance->CCER |= TIM_CCER_CC4P;
       }
       break;
+    default:
+      break;
     }
   }
   HAL_GPIO_WritePin(PC13_LED_GPIO_Port, PC13_LED_Pin, GPIO_PIN_SET);
@@ -630,6 +653,7 @@ void StartDefaultTask(void *argument)
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 5 */
   static int overridetimer = 0; // normal mode
+  HAL_UART_Receive_IT(&huart1, &uartbyte, 1);
   
   /* Infinite loop */
   for(;;)
@@ -662,7 +686,7 @@ void StartDefaultTask(void *argument)
 	htim3.Instance->CCR3 = 1500;
 	htim3.Instance->CCR4 = 1500;
       }
-      printf("CHs: %d %d\r\n", htim3.Instance->CCR1, htim3.Instance->CCR2);
+      //printf("CHs: %d %d\r\n", htim3.Instance->CCR1, htim3.Instance->CCR2);
       // Increase all ages
       if (pulseage[0] < 1000) pulseage[0]++;
       if (pulseage[1] < 1000) pulseage[1]++;

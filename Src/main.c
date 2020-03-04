@@ -564,7 +564,7 @@ void usbInputCallback(uint8_t b)
 
 uint8_t uartbyte;
 
-void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
   if (huart == &huart1) {
     static char inputline[INPUTLEN];

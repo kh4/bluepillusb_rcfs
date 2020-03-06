@@ -532,11 +532,15 @@ int _write(int file, char *data, int len) {
   return len;
 }
 
+static int debugout = 0;
 int pwmFromUSB[4] = {1500,1500,1500,1500};
 int pwmFromUSBAge = 100;
 void usbLineIn(char *l)
 {
   int a,b,c,d;
+  if (*l == 'D')
+    debugout = !debugout;
+
   if ( 4 == sscanf(l,"%d %d %d %d", &a, &b, &c, &d)) {
     if ((a > 900) && (a < 2100)) pwmFromUSB[0] = a; else pwmFromUSB[0] = 1500;
     if ((b > 900) && (b < 2100)) pwmFromUSB[1] = b; else pwmFromUSB[1] = 1500;
@@ -667,10 +671,7 @@ void StartDefaultTask(void *argument)
       if ((pulseagemax < 100) && ((pulse[0] < 1400) || (pulse[0] > 1600)))
 	overridetimer = 500;
 
-      //printf("O: %d PA %d UA %d ch0 %d \r\n", overridetimer, pulseagemax, pwmFromUSBAge,pulse[0]);
-
       if ((!overridetimer) && (pwmFromUSBAge < 100)) {
-	//printf("USB\r\n");
 	htim3.Instance->CCR1 = pwmFromUSB[0];
 	htim3.Instance->CCR2 = pwmFromUSB[1];
 	htim3.Instance->CCR3 = pwmFromUSB[2];
@@ -686,7 +687,7 @@ void StartDefaultTask(void *argument)
 	htim3.Instance->CCR3 = 1500;
 	htim3.Instance->CCR4 = 1500;
       }
-      //printf("CHs: %d %d\r\n", htim3.Instance->CCR1, htim3.Instance->CCR2);
+
       // Increase all ages
       if (pulseage[0] < 1000) pulseage[0]++;
       if (pulseage[1] < 1000) pulseage[1]++;
@@ -694,8 +695,20 @@ void StartDefaultTask(void *argument)
       if (pulseage[3] < 1000) pulseage[3]++;
       if (pwmFromUSBAge < 1000) pwmFromUSBAge++;
       if (overridetimer) overridetimer--;
-	//printf("%d pulses %d %d %d %d\r\n",
-      //     tim2ints, pulse[0],pulse[1],pulse[2],pulse[3]);
+
+      if  (debugout) {
+	static int debugcnt = 0;
+	if (debugcnt++ > 10) {
+	  debugcnt = 0;
+	  printf("USB: age %d pulses %d %d %d %d\r\n",
+		 pwmFromUSBAge, pwmFromUSB[0],pwmFromUSB[1],pwmFromUSB[2],pwmFromUSB[3]);
+	  printf("PWM: age %d pulses %d %d %d %d\r\n",
+		 pulseagemax, pulse[0], pulse[1], pulse[2], pulse[3]);
+	  printf("OUT: %lu %lu %lu %lu\r\n",
+		 htim3.Instance->CCR1, htim3.Instance->CCR2,
+		 htim3.Instance->CCR3, htim3.Instance->CCR4);
+	}
+      }
     }
   /* USER CODE END 5 */ 
 }

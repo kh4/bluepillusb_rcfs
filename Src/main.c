@@ -541,13 +541,22 @@ void usbLineIn(char *l)
   if (*l == 'D')
     debugout = !debugout;
 
-  if ( 4 == sscanf(l,"%d %d %d %d", &a, &b, &c, &d)) {
+#if 1
+    if ( 2 == sscanf(l,"CH%d=%d", &a, &b)) {
+      if ((a > 0) && (a < 5) && (b >= 900) && (b <=2100)) {
+        pwmFromUSB[a] = b;
+        pwmFromUSBAge = 0;
+      }
+    }
+#else		
+    if ( 4 == sscanf(l,"%d %d %d %d", &a, &b, &c, &d)) {
     if ((a > 900) && (a < 2100)) pwmFromUSB[0] = a; else pwmFromUSB[0] = 1500;
     if ((b > 900) && (b < 2100)) pwmFromUSB[1] = b; else pwmFromUSB[1] = 1500;
     if ((c > 900) && (c < 2100)) pwmFromUSB[2] = c; else pwmFromUSB[2] = 1500;
     if ((d > 900) && (b < 2100)) pwmFromUSB[3] = d; else pwmFromUSB[3] = 1500;
     pwmFromUSBAge = 0;
-  }
+#endif
+    }
 }
 
 #define INPUTLEN 32
